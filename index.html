@@ -1,443 +1,428 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>GestiónHerramientas</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#f1f5f9}</style>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>GestiónHerramientas - Tronex</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #1e293b; }
+        table { width: 100%; border-collapse: collapse; table-layout: auto; }
+        /* Mejora para Firefox en scroll de tablas */
+        .table-container { overflow-x: auto; width: 100%; }
+    </style>
 </head>
 <body>
-<div id="root"></div>
-<script>
-const API = "https://script.google.com/macros/s/AKfycbwK3nNJAv7K5RB3o1uF4O6SkhMF9t8ZsTIZh_8oivx4utFoXE8GWmitPW-_lUuHNB8c/exec";
-function jsonp(params) {
-  return new Promise((resolve, reject) => {
-    const cb = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-    const qs = Object.entries({ ...params, callback: cb }).map(([k,v]) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
-    const s = document.createElement("script");
-    s.src = API + "?" + qs;
-    window[cb] = d => { delete window[cb]; document.body.removeChild(s); resolve(d); };
-    s.onerror = () => { delete window[cb]; document.body.removeChild(s); reject(new Error("Error de red")); };
-    document.body.appendChild(s);
-  });
-}
-const call = (action, params={}) => jsonp({ action, ...params });
-</script>
-<script type="text/babel">
-const TABS = ["Dashboard","Herramientas","Empleados","Asignaciones"];
+    <div id="root"></div>
 
-const fmtFecha = f => {
-  if (!f) return "—";
-  const d = new Date(f);
-  return isNaN(d.getTime()) ? f : d.toLocaleDateString("es-CO");
-};
+    <script>
+        // REEMPLAZA ESTA URL CON TU SCRIPT DE GOOGLE SI ES DIFERENTE
+        const API = "https://script.google.com/macros/s/AKfycbwK3nNJAv7K5RB3o1uF4O6SkhMF9t8ZsTIZh_8oivx4utFoXE8GWmitPW-_lUuHNB8c/exec";
 
-const Badge = ({ text, color }) => {
-  const styles = {
-    green: { background:"#d1fae5", color:"#065f46" },
-    red:   { background:"#fee2e2", color:"#991b1b" },
-    blue:  { background:"#dbeafe", color:"#1e40af" },
-    gray:  { background:"#f3f4f6", color:"#374151" }
-  };
-  return <span style={{ padding:"2px 10px", borderRadius:99, fontSize:12, fontWeight:600, ...styles[color] }}>{text}</span>;
-};
+        function jsonp(params) {
+            return new Promise((resolve, reject) => {
+                const cb = "cb_" + Math.random().toString(36).substring(2, 11);
+                
+                // Construcción de URL compatible con Edge/Firefox
+                const url = new URL(API);
+                Object.entries({ ...params, callback: cb }).forEach(([k, v]) => {
+                    url.searchParams.append(k, v);
+                });
 
-const Modal = ({ title, onClose, children }) => (
-  <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center" }}>
-    <div style={{ background:"#fff", borderRadius:16, padding:28, width:"100%", maxWidth:440, boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-        <h2 style={{ margin:0, fontSize:18, color:"#1e293b" }}>{title}</h2>
-        <button onClick={onClose} style={{ border:"none", background:"none", fontSize:22, cursor:"pointer", color:"#64748b" }}>×</button>
-      </div>
-      {children}
-    </div>
-  </div>
-);
+                const s = document.createElement("script");
+                s.src = url.toString();
+                s.async = true;
 
-const Input = ({ label, ...props }) => (
-  <div style={{ marginBottom:14 }}>
-    <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#475569", marginBottom:4 }}>{label}</label>
-    <input {...props} style={{ width:"100%", padding:"8px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:14, outline:"none" }}/>
-  </div>
-);
+                window[cb] = (data) => {
+                    cleanup();
+                    resolve(data);
+                };
 
-const Textarea = ({ label, ...props }) => (
-  <div style={{ marginBottom:14 }}>
-    <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#475569", marginBottom:4 }}>{label}</label>
-    <textarea {...props} rows={3} style={{ width:"100%", padding:"8px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:14, resize:"vertical", outline:"none" }}/>
-  </div>
-);
+                const cleanup = () => {
+                    if (s.parentNode) s.parentNode.removeChild(s);
+                    delete window[cb];
+                };
 
-const Btn = ({ children, onClick, color="blue", small, disabled }) => {
-  const bg = { blue:"#2563eb", red:"#dc2626", green:"#16a34a", gray:"#64748b" };
-  return (
-    <button disabled={disabled} onClick={onClick} style={{
-      background: disabled ? "#cbd5e1" : bg[color], color:"#fff", border:"none", borderRadius:8,
-      padding: small ? "5px 12px" : "9px 18px", fontSize: small ? 12 : 14,
-      fontWeight:600, cursor: disabled ? "not-allowed" : "pointer"
-    }}>{children}</button>
-  );
-};
+                s.onerror = () => {
+                    cleanup();
+                    reject(new Error("Error de conexión. Verifique permisos en Edge/Firefox."));
+                };
 
-const SearchBox = ({ value, onChange, placeholder }) => (
-  <div style={{ marginBottom:14 }}>
-    <input value={value} onChange={onChange} placeholder={placeholder}
-      style={{ width:"100%", padding:"9px 14px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:14, outline:"none" }}/>
-  </div>
-);
+                document.head.appendChild(s);
+            });
+        }
+        const call = (action, params = {}) => jsonp({ action, ...params });
+    </script>
 
-function App() {
-  const [tab, setTab]                 = React.useState("Dashboard");
-  const [herramientas, setHerramientas] = React.useState([]);
-  const [empleados, setEmpleados]     = React.useState([]);
-  const [asignaciones, setAsignaciones] = React.useState([]);
-  const [loading, setLoading]         = React.useState(true);
-  const [error, setError]             = React.useState("");
-  const [modal, setModal]             = React.useState(null);
-  const [form, setForm]               = React.useState({});
-  const [saving, setSaving]           = React.useState(false);
-  const [search, setSearch]           = React.useState("");
-  const [searchEmp, setSearchEmp]     = React.useState("");
+    <script type="text/babel">
+        const TABS = ["Dashboard", "Herramientas", "Empleados", "Asignaciones"];
 
-  const load = async () => {
-    setLoading(true); setError("");
-    try {
-      const [h, e, a] = await Promise.all([call("getHerramientas"), call("getEmpleados"), call("getAsignaciones")]);
-      setHerramientas(Array.isArray(h) ? h : []);
-      setEmpleados(Array.isArray(e) ? e : []);
-      setAsignaciones(Array.isArray(a) ? a : []);
-    } catch(err) {
-      setError("❌ No se pudo conectar con Google Sheets.");
-    }
-    setLoading(false);
-  };
+        const fmtFecha = f => {
+            if (!f) return "—";
+            const d = new Date(f);
+            return isNaN(d.getTime()) ? f : d.toLocaleDateString("es-CO");
+        };
 
-  React.useEffect(() => { load(); }, []);
+        const Badge = ({ text, color }) => {
+            const styles = {
+                green: { background: "#d1fae5", color: "#065f46" },
+                red: { background: "#fee2e2", color: "#991b1b" },
+                blue: { background: "#dbeafe", color: "#1e40af" },
+                gray: { background: "#f3f4f6", color: "#374151" }
+            };
+            return <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600, ...styles[color] }}>{text}</span>;
+        };
 
-  const f = k => v => setForm(p => ({ ...p, [k]: typeof v === "string" ? v : v.target.value }));
-  const openModal  = (type, data={}) => { setModal(type); setForm(data); };
-  const closeModal = () => { setModal(null); setForm({}); };
-
-  const saveHerramienta = async () => {
-    if (!form.referencia || !form.nombre) return alert("Referencia y nombre son obligatorios.");
-    setSaving(true);
-    await call("addHerramienta", { referencia:form.referencia, nombre:form.nombre, descripcion:form.descripcion||"", cantidad:form.cantidad||1 });
-    await load(); setSaving(false); closeModal();
-  };
-
-  const saveEmpleado = async () => {
-    if (!form.nombre || !form.cedula) return alert("Nombre y cédula son obligatorios.");
-    setSaving(true);
-    await call("addEmpleado", { nombre:form.nombre, cedula:form.cedula });
-    await load(); setSaving(false); closeModal();
-  };
-
-  const saveAsignacion = async () => {
-    if (!form.empleadoId || !form.herramientaId) return alert("Selecciona empleado y herramienta.");
-    setSaving(true);
-    await call("addAsignacion", {
-      empleadoId:form.empleadoId, herramientaId:form.herramientaId,
-      fecha: new Date().toISOString().split("T")[0],
-      estado:"Asignado", observaciones:form.observaciones||""
-    });
-    await load(); setSaving(false); closeModal();
-  };
-
-  const [asigDevolver, setAsigDevolver] = React.useState(null);
-  const [obsDevolucion, setObsDevolucion] = React.useState("");
-
-  const devolver = (asig) => { setAsigDevolver(asig); setObsDevolucion(""); };
-
-  const confirmarDevolucion = async () => {
-    setSaving(true);
-    await call("updateAsignacion", {
-      id: asigDevolver.id, estado:"Devuelto",
-      fechaDevolucion: new Date().toISOString().split("T")[0],
-      observaciones: obsDevolucion
-    });
-    setAsigDevolver(null); setObsDevolucion("");
-    await load(); setSaving(false);
-  };
-
-  const activas   = asignaciones.filter(a => a.estado === "Asignado");
-  const devueltas = asignaciones.filter(a => a.estado === "Devuelto");
-
-  const filteredAsig = asignaciones.filter(a => {
-    const emp = empleados.find(e => e.id === a.empleadoId);
-    const her = herramientas.find(h => h.id === a.herramientaId);
-    const q = search.toLowerCase();
-    return !q || emp?.nombre?.toLowerCase().includes(q) || her?.nombre?.toLowerCase().includes(q) || String(emp?.cedula||"").includes(q);
-  });
-
-  const filteredEmps = empleados.filter(e => {
-    const q = searchEmp.toLowerCase();
-    return !q || e.nombre?.toLowerCase().includes(q) || String(e.cedula||"").includes(q);
-  });
-
-  const card = { background:"#fff", borderRadius:14, padding:20, boxShadow:"0 1px 8px rgba(0,0,0,0.08)" };
-  const th   = { padding:"8px 12px", textAlign:"left", color:"#475569", fontWeight:600, borderBottom:"1px solid #e2e8f0" };
-  const td   = { padding:"8px 12px", borderBottom:"1px solid #f1f5f9" };
-
-  return (
-    <div style={{ minHeight:"100vh", background:"#f1f5f9" }}>
-
-      {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,#1e40af,#2563eb)", padding:"18px 28px", display:"flex", alignItems:"center", gap:14 }}>
-        <div style={{ fontSize:26 }}>🔧</div>
-        <div>
-          <div style={{ color:"#fff", fontWeight:700, fontSize:18 }}>GestiónHerramientas</div>
-          <div style={{ color:"#bfdbfe", fontSize:12 }}>Control de inventario y asignaciones</div>
-        </div>
-        <button onClick={load} style={{ marginLeft:"auto", background:"rgba(255,255,255,0.2)", border:"none", borderRadius:8, color:"#fff", padding:"6px 14px", cursor:"pointer", fontSize:13 }}>🔄 Actualizar</button>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ background:"#fff", borderBottom:"1px solid #e2e8f0", display:"flex", paddingLeft:20 }}>
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            padding:"12px 20px", border:"none", background:"none", fontWeight:600, fontSize:14, cursor:"pointer",
-            color: tab===t ? "#2563eb" : "#64748b", borderBottom: tab===t ? "2px solid #2563eb" : "2px solid transparent"
-          }}>{t}</button>
-        ))}
-      </div>
-
-      <div style={{ padding:24, maxWidth:1000, margin:"0 auto" }}>
-        {loading && <div style={{ textAlign:"center", padding:60, color:"#64748b", fontSize:16 }}>⏳ Cargando datos...</div>}
-        {error   && <div style={{ background:"#fee2e2", color:"#991b1b", padding:16, borderRadius:10, marginBottom:16 }}>{error}</div>}
-
-        {/* DASHBOARD */}
-        {!loading && !error && tab === "Dashboard" && (
-          <div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:16, marginBottom:24 }}>
-              {[
-                { label:"Herramientas",        val:herramientas.length, icon:"🔩", bg:"#dbeafe" },
-                { label:"Empleados",           val:empleados.length,    icon:"👷", bg:"#d1fae5" },
-                { label:"Asignaciones activas",val:activas.length,      icon:"📋", bg:"#fef3c7" },
-                { label:"Devoluciones",        val:devueltas.length,    icon:"✅", bg:"#f3e8ff" },
-              ].map(c => (
-                <div key={c.label} style={{ ...card, background:c.bg, textAlign:"center" }}>
-                  <div style={{ fontSize:32 }}>{c.icon}</div>
-                  <div style={{ fontSize:28, fontWeight:700, color:"#1e293b" }}>{c.val}</div>
-                  <div style={{ fontSize:13, color:"#475569" }}>{c.label}</div>
+        const Modal = ({ title, onClose, children }) => (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                        <h2 style={{ margin: 0, fontSize: 18, color: "#1e293b" }}>{title}</h2>
+                        <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 22, cursor: "pointer", color: "#64748b" }}>×</button>
+                    </div>
+                    {children}
                 </div>
-              ))}
             </div>
-            <div style={card}>
-              <h3 style={{ margin:"0 0 16px", color:"#1e293b" }}>📋 Asignaciones Activas</h3>
-              {activas.length === 0 ? <p style={{ color:"#94a3b8" }}>No hay asignaciones activas.</p> : (
-                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:14 }}>
-                  <thead><tr style={{ background:"#f8fafc" }}>
-                    {["Empleado","Cédula","Herramienta","Referencia","Fecha","Acción"].map(h => <th key={h} style={th}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{activas.map(a => {
-                    const emp = empleados.find(e => e.id === a.empleadoId);
-                    const her = herramientas.find(h => h.id === a.herramientaId);
-                    return (
-                      <tr key={a.id}>
-                        <td style={td}>{emp?.nombre||"—"}</td>
-                        <td style={td}>{emp?.cedula||"—"}</td>
-                        <td style={td}>{her?.nombre||"—"}</td>
-                        <td style={td}>{her?.referencia||"—"}</td>
-                        <td style={td}>{fmtFecha(a.fecha)}</td>
-                        <td style={td}><Btn small color="green" onClick={() => devolver(a)}>Devolver</Btn></td>
-                      </tr>
-                    );
-                  })}</tbody>
-                </table>
-              )}
+        );
+
+        const Input = ({ label, ...props }) => (
+            <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 4 }}>{label}</label>
+                <input {...props} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none" }} />
             </div>
-          </div>
-        )}
+        );
 
-        {/* HERRAMIENTAS */}
-        {!loading && !error && tab === "Herramientas" && (
-          <div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <h2 style={{ margin:0, color:"#1e293b" }}>🔩 Herramientas</h2>
-              <Btn onClick={() => openModal("herramienta")}>+ Agregar Herramienta</Btn>
+        const Textarea = ({ label, ...props }) => (
+            <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 4 }}>{label}</label>
+                <textarea {...props} rows={3} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 14, resize: "vertical", outline: "none" }} />
             </div>
-            <div style={card}>
-              {herramientas.length === 0 ? <p style={{ color:"#94a3b8" }}>No hay herramientas registradas.</p> : (
-                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:14 }}>
-                  <thead><tr style={{ background:"#f8fafc" }}>
-                    {["Referencia","Nombre","Descripción","Cantidad"].map(h => <th key={h} style={th}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{herramientas.map(h => (
-                    <tr key={h.id}>
-                      <td style={td}><Badge text={h.referencia} color="blue"/></td>
-                      <td style={{ ...td, fontWeight:600 }}>{h.nombre}</td>
-                      <td style={{ ...td, color:"#64748b" }}>{h.descripcion}</td>
-                      <td style={td}>{h.cantidad}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              )}
+        );
+
+        const Btn = ({ children, onClick, color = "blue", small, disabled }) => {
+            const bg = { blue: "#2563eb", red: "#dc2626", green: "#16a34a", gray: "#64748b" };
+            return (
+                <button disabled={disabled} onClick={onClick} style={{
+                    background: disabled ? "#cbd5e1" : bg[color], color: "#fff", border: "none", borderRadius: 8,
+                    padding: small ? "5px 12px" : "9px 18px", fontSize: small ? 12 : 14,
+                    fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer"
+                }}>{children}</button>
+            );
+        };
+
+        const SearchBox = ({ value, onChange, placeholder }) => (
+            <div style={{ marginBottom: 14 }}>
+                <input value={value} onChange={onChange} placeholder={placeholder}
+                    style={{ width: "100%", padding: "9px 14px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none" }} />
             </div>
-          </div>
-        )}
+        );
 
-        {/* EMPLEADOS */}
-        {!loading && !error && tab === "Empleados" && (
-          <div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <h2 style={{ margin:0, color:"#1e293b" }}>👷 Empleados</h2>
-              <Btn onClick={() => openModal("empleado")}>+ Registrar Empleado</Btn>
-            </div>
-            <SearchBox value={searchEmp} onChange={e => setSearchEmp(e.target.value)} placeholder="🔍 Buscar por nombre o cédula..."/>
-            <div style={card}>
-              {filteredEmps.length === 0 ? <p style={{ color:"#94a3b8" }}>No se encontraron empleados.</p> : (
-                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:14 }}>
-                  <thead><tr style={{ background:"#f8fafc" }}>
-                    {["Nombre Completo","Cédula","Herramientas Asignadas"].map(h => <th key={h} style={th}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{filteredEmps.map(e => {
-                    const count = asignaciones.filter(a => a.empleadoId === e.id && a.estado === "Asignado").length;
-                    return (
-                      <tr key={e.id}>
-                        <td style={{ ...td, fontWeight:600 }}>{e.nombre}</td>
-                        <td style={td}>{e.cedula}</td>
-                        <td style={td}>
-                          {count > 0
-                            ? <span onClick={() => { setSearch(e.nombre); setTab("Asignaciones"); }} style={{ cursor:"pointer" }}>
-                                <Badge text={`${count} activa(s)`} color="blue"/>
-                              </span>
-                            : <Badge text="0 activa(s)" color="gray"/>}
-                        </td>
-                      </tr>
-                    );
-                  })}</tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        )}
+        function App() {
+            const [tab, setTab] = React.useState("Dashboard");
+            const [herramientas, setHerramientas] = React.useState([]);
+            const [empleados, setEmpleados] = React.useState([]);
+            const [asignaciones, setAsignaciones] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [error, setError] = React.useState("");
+            const [modal, setModal] = React.useState(null);
+            const [form, setForm] = React.useState({});
+            const [saving, setSaving] = React.useState(false);
+            const [search, setSearch] = React.useState("");
+            const [searchEmp, setSearchEmp] = React.useState("");
 
-        {/* ASIGNACIONES */}
-        {!loading && !error && tab === "Asignaciones" && (
-          <div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <h2 style={{ margin:0, color:"#1e293b" }}>📋 Asignaciones</h2>
-              <Btn onClick={() => openModal("asignacion")}>+ Nueva Asignación</Btn>
-            </div>
-            <SearchBox value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Buscar por empleado, cédula o herramienta..."/>
-            <div style={card}>
-              {filteredAsig.length === 0 ? <p style={{ color:"#94a3b8" }}>No hay asignaciones.</p> : (
-                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:14 }}>
-                  <thead><tr style={{ background:"#f8fafc" }}>
-                    {["Empleado","Cédula","Herramienta","Ref.","Fecha","Estado","Observación","Acción"].map(h => <th key={h} style={th}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{filteredAsig.map(a => {
-                    const emp = empleados.find(e => e.id === a.empleadoId);
-                    const her = herramientas.find(h => h.id === a.herramientaId);
-                    return (
-                      <tr key={a.id}>
-                        <td style={{ ...td, fontWeight:600 }}>{emp?.nombre||"—"}</td>
-                        <td style={td}>{emp?.cedula||"—"}</td>
-                        <td style={td}>{her?.nombre||"—"}</td>
-                        <td style={td}><Badge text={her?.referencia||"—"} color="blue"/></td>
-                        <td style={td}>{fmtFecha(a.fecha)}</td>
-                        <td style={td}><Badge text={a.estado} color={a.estado==="Asignado"?"red":"green"}/></td>
-                        <td style={{ ...td, color:"#64748b", fontSize:13 }}>{a.observaciones||"—"}</td>
-                        <td style={td}>
-                          {a.estado==="Asignado"
-                            ? <Btn small color="green" onClick={() => devolver(a)}>Devolver</Btn>
-                            : <span style={{ color:"#94a3b8", fontSize:12 }}>{fmtFecha(a.fechaDevolucion)}</span>}
-                        </td>
-                      </tr>
-                    );
-                  })}</tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+            const load = async () => {
+                setLoading(true); setError("");
+                try {
+                    const [h, e, a] = await Promise.all([call("getHerramientas"), call("getEmpleados"), call("getAsignaciones")]);
+                    setHerramientas(Array.isArray(h) ? h : []);
+                    setEmpleados(Array.isArray(e) ? e : []);
+                    setAsignaciones(Array.isArray(a) ? a : []);
+                } catch (err) {
+                    setError("❌ Error de conexión con Google Sheets. Revise la consola del navegador.");
+                }
+                setLoading(false);
+            };
 
-      {/* MODAL HERRAMIENTA */}
-      {modal === "herramienta" && (
-        <Modal title="Agregar Herramienta" onClose={closeModal}>
-          <Input label="Referencia *" value={form.referencia||""} onChange={f("referencia")} placeholder="Ej: HER-001"/>
-          <Input label="Nombre *" value={form.nombre||""} onChange={f("nombre")} placeholder="Ej: Taladro Bosch"/>
-          <Textarea label="Descripción" value={form.descripcion||""} onChange={f("descripcion")} placeholder="Descripción del elemento..."/>
-          <Input label="Cantidad" type="number" value={form.cantidad||1} onChange={f("cantidad")} min={1}/>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
-            <Btn color="gray" onClick={closeModal}>Cancelar</Btn>
-            <Btn onClick={saveHerramienta} disabled={saving}>{saving?"Guardando...":"Guardar"}</Btn>
-          </div>
-        </Modal>
-      )}
+            React.useEffect(() => { load(); }, []);
 
-      {/* MODAL EMPLEADO */}
-      {modal === "empleado" && (
-        <Modal title="Registrar Empleado" onClose={closeModal}>
-          <Input label="Nombre Completo *" value={form.nombre||""} onChange={f("nombre")} placeholder="Ej: Juan Carlos Pérez"/>
-          <Input label="Cédula *" value={form.cedula||""} onChange={f("cedula")} placeholder="Ej: 1234567890"/>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
-            <Btn color="gray" onClick={closeModal}>Cancelar</Btn>
-            <Btn onClick={saveEmpleado} disabled={saving}>{saving?"Guardando...":"Guardar"}</Btn>
-          </div>
-        </Modal>
-      )}
+            const f = k => v => setForm(p => ({ ...p, [k]: typeof v === "string" ? v : v.target.value }));
+            const openModal = (type, data = {}) => { setModal(type); setForm(data); };
+            const closeModal = () => { setModal(null); setForm({}); };
 
-      {/* MODAL ASIGNACION */}
-      {modal === "asignacion" && (
-        <Modal title="Nueva Asignación" onClose={closeModal}>
-          <div style={{ marginBottom:14 }}>
-            <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#475569", marginBottom:4 }}>Empleado *</label>
-            <select value={form.empleadoId||""} onChange={e => f("empleadoId")(e.target.value)}
-              style={{ width:"100%", padding:"8px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:14 }}>
-              <option value="">— Seleccionar empleado —</option>
-              {empleados.map(e => <option key={e.id} value={e.id}>{e.nombre} · {e.cedula}</option>)}
-            </select>
-          </div>
-          <div style={{ marginBottom:14 }}>
-            <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#475569", marginBottom:4 }}>Herramienta *</label>
-            <select value={form.herramientaId||""} onChange={e => f("herramientaId")(e.target.value)}
-              style={{ width:"100%", padding:"8px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:14 }}>
-              <option value="">— Seleccionar herramienta —</option>
-              {herramientas
-                .filter(h => {
-                  const asignadas = asignaciones.filter(a => a.herramientaId === h.id && a.estado === "Asignado").length;
-                  return asignadas < (parseInt(h.cantidad) || 1);
-                })
-                .map(h => {
-                  const asignadas = asignaciones.filter(a => a.herramientaId === h.id && a.estado === "Asignado").length;
-                  const disponibles = (parseInt(h.cantidad)||1) - asignadas;
-                  return <option key={h.id} value={h.id}>[{h.referencia}] {h.nombre} ({disponibles} disponible{disponibles!==1?"s":""})</option>;
-                })}
-            </select>
-          </div>
-          <Textarea label="Observaciones" value={form.observaciones||""} onChange={f("observaciones")} placeholder="Notas adicionales..."/>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
-            <Btn color="gray" onClick={closeModal}>Cancelar</Btn>
-            <Btn onClick={saveAsignacion} disabled={saving}>{saving?"Guardando...":"Asignar"}</Btn>
-          </div>
-        </Modal>
-      )}
-      {/* MODAL DEVOLUCION */}
-      {asigDevolver && (
-        <Modal title="Registrar Devolución" onClose={() => setAsigDevolver(null)}>
-          <div style={{ background:"#f8fafc", borderRadius:10, padding:12, marginBottom:16, fontSize:14, color:"#475569" }}>
-            <div><strong>Empleado:</strong> {empleados.find(e => e.id === asigDevolver.empleadoId)?.nombre||"—"}</div>
-            <div><strong>Herramienta:</strong> {herramientas.find(h => h.id === asigDevolver.herramientaId)?.nombre||"—"}</div>
-            <div><strong>Asignado el:</strong> {fmtFecha(asigDevolver.fecha)}</div>
-          </div>
-          <Textarea label="Observación de devolución" value={obsDevolucion} onChange={e => setObsDevolucion(e.target.value)} placeholder="Ej: Devuelto en buen estado, sin novedad..."/>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
-            <Btn color="gray" onClick={() => setAsigDevolver(null)}>Cancelar</Btn>
-            <Btn color="green" onClick={confirmarDevolucion} disabled={saving}>{saving?"Guardando...":"Confirmar Devolución"}</Btn>
-          </div>
-        </Modal>
-      )}
+            const saveHerramienta = async () => {
+                if (!form.referencia || !form.nombre) return alert("Referencia y nombre son obligatorios.");
+                setSaving(true);
+                await call("addHerramienta", { referencia: form.referencia, nombre: form.nombre, descripcion: form.descripcion || "", cantidad: form.cantidad || 1 });
+                await load(); setSaving(false); closeModal();
+            };
 
-    </div>
-  );
-}
+            const saveEmpleado = async () => {
+                if (!form.nombre || !form.cedula) return alert("Nombre y cédula son obligatorios.");
+                setSaving(true);
+                await call("addEmpleado", { nombre: form.nombre, cedula: form.cedula });
+                await load(); setSaving(false); closeModal();
+            };
 
-ReactDOM.render(<App/>, document.getElementById("root"));
-</script>
+            const saveAsignacion = async () => {
+                if (!form.empleadoId || !form.herramientaId) return alert("Selecciona empleado y herramienta.");
+                setSaving(true);
+                await call("addAsignacion", {
+                    empleadoId: form.empleadoId, herramientaId: form.herramientaId,
+                    fecha: new Date().toISOString().split("T")[0],
+                    estado: "Asignado", observaciones: form.observaciones || ""
+                });
+                await load(); setSaving(false); closeModal();
+            };
+
+            const [asigDevolver, setAsigDevolver] = React.useState(null);
+            const [obsDevolucion, setObsDevolucion] = React.useState("");
+
+            const devolver = (asig) => { setAsigDevolver(asig); setObsDevolucion(""); };
+
+            const confirmarDevolucion = async () => {
+                setSaving(true);
+                await call("updateAsignacion", {
+                    id: asigDevolver.id, estado: "Devuelto",
+                    fechaDevolucion: new Date().toISOString().split("T")[0],
+                    observaciones: obsDevolucion
+                });
+                setAsigDevolver(null); setObsDevolucion("");
+                await load(); setSaving(false);
+            };
+
+            const activas = asignaciones.filter(a => a.estado === "Asignado");
+            const devueltas = asignaciones.filter(a => a.estado === "Devuelto");
+
+            const filteredAsig = asignaciones.filter(a => {
+                const emp = empleados.find(e => e.id === a.empleadoId);
+                const her = herramientas.find(h => h.id === a.herramientaId);
+                const q = search.toLowerCase();
+                return !q || emp?.nombre?.toLowerCase().includes(q) || her?.nombre?.toLowerCase().includes(q) || String(emp?.cedula || "").includes(q);
+            });
+
+            const filteredEmps = empleados.filter(e => {
+                const q = searchEmp.toLowerCase();
+                return !q || e.nombre?.toLowerCase().includes(q) || String(e.cedula || "").includes(q);
+            });
+
+            const card = { background: "#fff", borderRadius: 14, padding: 20, boxShadow: "0 1px 8px rgba(0,0,0,0.08)", marginBottom: 20 };
+            const th = { padding: "12px", textAlign: "left", color: "#475569", fontWeight: 600, borderBottom: "1px solid #e2e8f0", background: "#f8fafc" };
+            const td = { padding: "12px", borderBottom: "1px solid #f1f5f9" };
+
+            return (
+                <div style={{ minHeight: "100vh" }}>
+                    {/* Header */}
+                    <div style={{ background: "linear-gradient(135deg,#1e40af,#2563eb)", padding: "18px 28px", display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{ fontSize: 26 }}>🔧</div>
+                        <div>
+                            <div style={{ color: "#fff", fontWeight: 700, fontSize: 18 }}>GestiónHerramientas</div>
+                            <div style={{ color: "#bfdbfe", fontSize: 12 }}>Panel Administrativo</div>
+                        </div>
+                        <button onClick={load} style={{ marginLeft: "auto", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, color: "#fff", padding: "6px 14px", cursor: "pointer", fontSize: 13 }}>🔄 Actualizar</button>
+                    </div>
+
+                    {/* Tabs */}
+                    <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", display: "flex", paddingLeft: 20, overflowX: "auto" }}>
+                        {TABS.map(t => (
+                            <button key={t} onClick={() => setTab(t)} style={{
+                                padding: "12px 20px", border: "none", background: "none", fontWeight: 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
+                                color: tab === t ? "#2563eb" : "#64748b", borderBottom: tab === t ? "2px solid #2563eb" : "2px solid transparent"
+                            }}>{t}</button>
+                        ))}
+                    </div>
+
+                    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+                        {loading && <div style={{ textAlign: "center", padding: 60, color: "#64748b" }}>⏳ Sincronizando con Google Sheets...</div>}
+                        {error && <div style={{ background: "#fee2e2", color: "#991b1b", padding: 16, borderRadius: 10, marginBottom: 16 }}>{error}</div>}
+
+                        {!loading && !error && (
+                            <div className="animate-fade">
+                                {tab === "Dashboard" && (
+                                    <div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 24 }}>
+                                            {[
+                                                { label: "Herramientas", val: herramientas.length, icon: "🔩", bg: "#dbeafe" },
+                                                { label: "Empleados", val: empleados.length, icon: "👷", bg: "#d1fae5" },
+                                                { label: "En Préstamo", val: activas.length, icon: "📋", bg: "#fef3c7" },
+                                                { label: "Devueltas", val: devueltas.length, icon: "✅", bg: "#f3e8ff" },
+                                            ].map(c => (
+                                                <div key={c.label} style={{ ...card, background: c.bg, textAlign: "center", marginBottom: 0 }}>
+                                                    <div style={{ fontSize: 32 }}>{c.icon}</div>
+                                                    <div style={{ fontSize: 28, fontWeight: 700 }}>{c.val}</div>
+                                                    <div style={{ fontSize: 13, color: "#475569" }}>{c.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div style={card}>
+                                            <h3 style={{ marginBottom: 16 }}>Asignaciones Activas</h3>
+                                            <div className="table-container">
+                                                <table>
+                                                    <thead><tr>
+                                                        {["Empleado", "Herramienta", "Referencia", "Fecha", "Acción"].map(h => <th key={h} style={th}>{h}</th>)}
+                                                    </tr></thead>
+                                                    <tbody>{activas.map(a => (
+                                                        <tr key={a.id}>
+                                                            <td style={td}>{empleados.find(e => e.id === a.empleadoId)?.nombre || "—"}</td>
+                                                            <td style={td}>{herramientas.find(h => h.id === a.herramientaId)?.nombre || "—"}</td>
+                                                            <td style={td}><Badge text={herramientas.find(h => h.id === a.herramientaId)?.referencia || "—"} color="blue" /></td>
+                                                            <td style={td}>{fmtFecha(a.fecha)}</td>
+                                                            <td style={td}><Btn small color="green" onClick={() => devolver(a)}>Devolver</Btn></td>
+                                                        </tr>
+                                                    ))}</tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {tab === "Herramientas" && (
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                            <h2>Inventario</h2>
+                                            <Btn onClick={() => openModal("herramienta")}>+ Nueva Herramienta</Btn>
+                                        </div>
+                                        <div style={card}>
+                                            <div className="table-container">
+                                                <table>
+                                                    <thead><tr>{["Ref.", "Nombre", "Descripción", "Stock"].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
+                                                    <tbody>{herramientas.map(h => (
+                                                        <tr key={h.id}>
+                                                            <td style={td}><Badge text={h.referencia} color="blue" /></td>
+                                                            <td style={{ ...td, fontWeight: 600 }}>{h.nombre}</td>
+                                                            <td style={{ ...td, color: "#64748b" }}>{h.descripcion}</td>
+                                                            <td style={td}>{h.cantidad}</td>
+                                                        </tr>
+                                                    ))}</tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {tab === "Empleados" && (
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                            <h2>Personal</h2>
+                                            <Btn onClick={() => openModal("empleado")}>+ Agregar Empleado</Btn>
+                                        </div>
+                                        <SearchBox value={searchEmp} onChange={e => setSearchEmp(e.target.value)} placeholder="Buscar por nombre o cédula..." />
+                                        <div style={card}>
+                                            <div className="table-container">
+                                                <table>
+                                                    <thead><tr>{["Nombre", "Cédula", "Estado"].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
+                                                    <tbody>{filteredEmps.map(e => {
+                                                        const count = asignaciones.filter(a => a.empleadoId === e.id && a.estado === "Asignado").length;
+                                                        return (
+                                                            <tr key={e.id}>
+                                                                <td style={{ ...td, fontWeight: 600 }}>{e.nombre}</td>
+                                                                <td style={td}>{e.cedula}</td>
+                                                                <td style={td}><Badge text={`${count} en uso`} color={count > 0 ? "blue" : "gray"} /></td>
+                                                            </tr>
+                                                        );
+                                                    })}</tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {tab === "Asignaciones" && (
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                            <h2>Historial de Asignaciones</h2>
+                                            <Btn onClick={() => openModal("asignacion")}>+ Asignar Herramienta</Btn>
+                                        </div>
+                                        <SearchBox value={search} onChange={e => setSearch(e.target.value)} placeholder="Filtrar historial..." />
+                                        <div style={card}>
+                                            <div className="table-container">
+                                                <table>
+                                                    <thead><tr>{["Empleado", "Herramienta", "Fecha", "Estado", "Acción"].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
+                                                    <tbody>{filteredAsig.map(a => (
+                                                        <tr key={a.id}>
+                                                            <td style={td}>{empleados.find(e => e.id === a.empleadoId)?.nombre || "—"}</td>
+                                                            <td style={td}>{herramientas.find(h => h.id === a.herramientaId)?.nombre || "—"}</td>
+                                                            <td style={td}>{fmtFecha(a.fecha)}</td>
+                                                            <td style={td}><Badge text={a.estado} color={a.estado === "Asignado" ? "red" : "green"} /></td>
+                                                            <td style={td}>
+                                                                {a.estado === "Asignado" ? <Btn small color="green" onClick={() => devolver(a)}>Devolver</Btn> : <span style={{ fontSize: 12 }}>{fmtFecha(a.fechaDevolucion)}</span>}
+                                                            </td>
+                                                        </tr>
+                                                    ))}</tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Modales */}
+                    {modal === "herramienta" && (
+                        <Modal title="Agregar Herramienta" onClose={closeModal}>
+                            <Input label="Referencia (ID)" value={form.referencia || ""} onChange={f("referencia")} placeholder="Ej: TAL-01" />
+                            <Input label="Nombre de Herramienta" value={form.nombre || ""} onChange={f("nombre")} placeholder="Ej: Taladro Percutor" />
+                            <Textarea label="Notas / Estado" value={form.descripcion || ""} onChange={f("descripcion")} />
+                            <Input label="Cantidad Total" type="number" value={form.cantidad || 1} onChange={f("cantidad")} />
+                            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                                <Btn color="gray" onClick={closeModal}>Cerrar</Btn>
+                                <Btn onClick={saveHerramienta} disabled={saving}>{saving ? "Guardando..." : "Guardar"}</Btn>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {modal === "empleado" && (
+                        <Modal title="Registrar Personal" onClose={closeModal}>
+                            <Input label="Nombre Completo" value={form.nombre || ""} onChange={f("nombre")} />
+                            <Input label="Cédula / ID" value={form.cedula || ""} onChange={f("cedula")} />
+                            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                                <Btn color="gray" onClick={closeModal}>Cerrar</Btn>
+                                <Btn onClick={saveEmpleado} disabled={saving}>{saving ? "Guardando..." : "Guardar"}</Btn>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {modal === "asignacion" && (
+                        <Modal title="Nueva Asignación" onClose={closeModal}>
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Empleado</label>
+                                <select value={form.empleadoId || ""} onChange={e => f("empleadoId")(e.target.value)} style={{ width: "100%", padding: 8, borderRadius: 8, border: "1.5px solid #e2e8f0" }}>
+                                    <option value="">— Seleccionar —</option>
+                                    {empleados.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Herramienta Disponible</label>
+                                <select value={form.herramientaId || ""} onChange={e => f("herramientaId")(e.target.value)} style={{ width: "100%", padding: 8, borderRadius: 8, border: "1.5px solid #e2e8f0" }}>
+                                    <option value="">— Seleccionar —</option>
+                                    {herramientas.map(h => <option key={h.id} value={h.id}>{h.nombre} ({h.referencia})</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                                <Btn color="gray" onClick={closeModal}>Cerrar</Btn>
+                                <Btn onClick={saveAsignacion} disabled={saving}>{saving ? "Procesando..." : "Asignar"}</Btn>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {asigDevolver && (
+                        <Modal title="Confirmar Devolución" onClose={() => setAsigDevolver(null)}>
+                            <p style={{ marginBottom: 16 }}>¿Desea registrar la devolución de la herramienta <strong>{herramientas.find(h => h.id === asigDevolver.herramientaId)?.nombre}</strong>?</p>
+                            <Textarea label="Observaciones de entrega" value={obsDevolucion} onChange={e => setObsDevolucion(e.target.value)} placeholder="Ej: Sin daños..." />
+                            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                                <Btn color="gray" onClick={() => setAsigDevolver(null)}>Atrás</Btn>
+                                <Btn color="green" onClick={confirmarDevolucion} disabled={saving}>{saving ? "Guardando..." : "Confirmar"}</Btn>
+                            </div>
+                        </Modal>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
 </body>
 </html>
